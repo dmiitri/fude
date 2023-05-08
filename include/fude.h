@@ -36,6 +36,7 @@ typedef struct _FudeTexture FudeTexture;
 FudeTexture* fude_create_texture(FudeRenderer* ren, uint32_t w, uint32_t h, const uint8_t* data, int comp);
 void fude_destroy_texture(FudeTexture* tex);
 
+void fude_update_texture(FudeTexture* tex, uint32_t w, uint32_t h, const uint8_t* data, int comp);
 void fude_draw_texture(FudeRenderer* ren, FudeTexture* tex, 
 int sx, int sy, uint32_t sw, uint32_t sh, 
 int dx, int dy, uint32_t dw, uint32_t dh);

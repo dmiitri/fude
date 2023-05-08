@@ -32,7 +32,6 @@ int main(void)
     waifu_image_height, data, waifu_image_comp);
     stbi_image_free(data);
 
-    int i = 0;
     while(!fude_window_should_close(window)) {
         fude_poll_input_events();
         fude_set_draw_color(ren, 255, 255, 255, 255);
@@ -41,9 +40,9 @@ int main(void)
         fude_draw_texture(ren, waifu, 0, 0, 1, 1, 0, 0, 
         waifu_dst_width, waifu_dst_height);
         fude_present_renderer(ren);
-        i += 1;
     }
 
+    fude_destroy_texture(waifu);
     fude_destroy_renderer(ren);
     fude_destroy_window(window);
     fude_deinit();

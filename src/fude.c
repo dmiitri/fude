@@ -306,6 +306,11 @@ void fude_clear_renderer(FudeRenderer* ren)
     ren->textures_count = 1;
     glClearColor(ren->draw_color[0], ren->draw_color[1], ren->draw_color[2], ren->draw_color[3]);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void fude_set_draw_color(FudeRenderer* ren, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
@@ -434,6 +439,16 @@ void fude_destroy_texture(FudeTexture* tex)
 {
     if(tex == NULL) return;
     free(tex);
+}
+
+void fude_update_texture(FudeTexture* tex, uint32_t w, uint32_t h, const uint8_t* data, int comp)
+{
+    if(tex == NULL) return;
+    if(data == NULL) return;
+    glBindTexture(GL_TEXTURE_2D, tex->id);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void fude_draw_texture(FudeRenderer* ren, FudeTexture* tex, 
