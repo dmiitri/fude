@@ -10,7 +10,7 @@ int main(void)
         return -1;
 
     int waifu_image_width, waifu_image_height, waifu_image_comp;
-    uint8_t* data = stbi_load("waifu.jpg", &waifu_image_width, &waifu_image_height, 
+    uint8_t* data = stbi_load("res/waifu.jpg", &waifu_image_width, &waifu_image_height, 
     &waifu_image_comp, STBI_rgb_alpha);
     int waifu_dst_width = waifu_image_width * 0.4;
     int waifu_dst_height = waifu_image_height * 0.4;
@@ -18,13 +18,13 @@ int main(void)
 
     FudeWindow* window = fude_create_window("My Waifu", waifu_dst_width, waifu_dst_height, false);
     if(window == NULL) {
-        fprintf(stderr, "ERROR: %s", fude_failure_reason());
+        fprintf(stderr, "ERROR: %s\n", fude_failure_reason());
         return 0;
     }
 
     FudeRenderer* ren = fude_create_renderer(window);
     if(ren == NULL) {
-        fprintf(stderr, "ERROR: %s", fude_failure_reason());
+        fprintf(stderr, "ERROR: %s\n", fude_failure_reason());
         return 0;
     }
 
