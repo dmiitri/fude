@@ -69,8 +69,12 @@ enum {
 static struct {
     uint32_t glfw_window_count;
     int last_failure_code;
-    // TODO: add a better error system
-    // char failure_msg[1024];
+
+    struct { 
+        FudeEvent events[FUDE_EVENT_QUEUE_CAPACITY];
+        uint32_t head;
+        uint32_t tail;
+    } event_queue;
 } FUDE = {0};
 
 static void _fude_check_opengl_errors()
@@ -103,6 +107,8 @@ bool fude_init(void)
         }
     }
 }
+
+
 
 void fude_deinit(void)
 {
@@ -185,7 +191,8 @@ FudeRenderer* fude_create_renderer(FudeWindow* window)
     if(window == NULL) 
         return NULL;
     glfwMakeContextCurrent(window->glfw_window);
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    // gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    gladLoadGLES2Loader((GLADloadproc)glfwGetProcAddress);
 
     FudeRenderer* ren = malloc(sizeof(FudeRenderer));
     if(ren == NULL)

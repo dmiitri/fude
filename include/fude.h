@@ -7,6 +7,52 @@
 #define FUDE_MAXIMUM_VERTICES 1024
 #define FUDE_MAXIMUM_INDICES (FUDE_MAXIMUM_VERTICES / 4)
 #define FUDE_MAXIMUM_TEXTURES 8
+#define FUDE_EVENT_QUEUE_CAPACITY 1024
+
+typedef enum FudeEventType {
+    FUDE_EVENT_NONE,
+    FUDE_EVENT_WINDOW_MOVED,
+    FUDE_EVENT_WINDOW_RESIZED,
+    FUDE_EVENT_WINDOW_CLOSED,
+    FUDE_EVENT_WINDOW_REFRESH,
+    FUDE_EVENT_WINDOW_FOCUSED,
+    FUDE_EVENT_WINDOW_DEFOCUSED,
+    FUDE_EVENT_WINDOW_ICONIFIED,
+    FUDE_EVENT_WINDOW_UNICONIFIED,
+    FUDE_EVENT_FRAMEBUFFER_RESIZED,
+    FUDE_EVENT_BUTTON_PRESSED,
+    FUDE_EVENT_BUTTON_RELEASED,
+    FUDE_EVENT_CURSOR_MOVED,
+    FUDE_EVENT_CURSOR_ENTERED,
+    FUDE_EVENT_CURSOR_LEFT,
+    FUDE_EVENT_SCROLLED,
+    FUDE_EVENT_KEY_PRESSED,
+    FUDE_EVENT_KEY_REPEATED,
+    FUDE_EVENT_KEY_RELEASED,
+    FUDE_EVENT_CODEPOINT_INPUT,
+    FUDE_EVENT_MONITOR_CONNECTED,
+    FUDE_EVENT_MONITOR_DISCONNECTED,
+    FUDE_EVENT_FILE_DROPPED,
+    FUDE_EVENT_JOYSTICK_CONNECTED,
+    FUDE_EVENT_JOYSTICK_DISCONNECTED,
+    FUDE_EVENT_WINDOW_MAXIMIZED,
+    FUDE_EVENT_WINDOW_UNMAXIMIZED,
+    FUDE_EVENT_SCALE_CHANGED,
+} FudeEventType;
+
+typedef struct FudeEvent {
+    FudeEventType type;
+    union {
+        struct { int x, y;  } pos;
+        struct { int width, height; } size;
+        struct { double x, y; } scroll;
+        struct { int key, scancode, mods; } keyboard;
+        struct { int button, mods; } mouse;
+        unsigned int codepoint;
+        struct { char** paths; int count; } file;
+        struct { float x, y; } scale;
+    };
+} FudeEvent;
 
 const char* fude_failure_reason(void);
 
