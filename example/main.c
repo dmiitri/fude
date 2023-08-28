@@ -16,27 +16,36 @@ int main(void)
     int waifu_dst_height = waifu_image_height * 0.4;
 
 
-    FudeWindow* window = fude_create_window("My Waifu", waifu_dst_width, waifu_dst_height, false);
+    Fude_Window* window = fude_create_window("My Waifu", waifu_dst_width, waifu_dst_height, false);
     if(window == NULL) {
         fprintf(stderr, "ERROR: %s\n", fude_failure_reason());
         return 0;
     }
 
-    FudeRenderer* ren = fude_create_renderer(window);
+    Fude_Renderer* ren = fude_create_renderer(window);
     if(ren == NULL) {
         fprintf(stderr, "ERROR: %s\n", fude_failure_reason());
         return 0;
     }
 
-    FudeTexture* waifu = fude_create_texture(ren, waifu_image_width, 
+    Fude_Texture* waifu = fude_create_texture(ren, waifu_image_width, 
     waifu_image_height, data, waifu_image_comp);
     stbi_image_free(data);
 
-    while(!fude_window_should_close(window)) {
+    bool quit = false;
+
+    while(!quit) {
         fude_poll_input_events();
+        Fude_Event event = {0};
+        while(fude_get_next_input_event(&event)) {
+            if(event.code == FUDE_EVENT_WINDOW_CLOSED) {
+                quit = true;
+                break;
+            }
+        }
+
         fude_set_draw_color(ren, 255, 255, 255, 255);
         fude_clear_renderer(ren);
-
         fude_draw_texture(ren, waifu, 0, 0, 1, 1, 0, 0, 
         waifu_dst_width, waifu_dst_height);
         fude_present_renderer(ren);

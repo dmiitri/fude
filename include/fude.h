@@ -9,7 +9,7 @@
 #define FUDE_MAXIMUM_TEXTURES 8
 #define FUDE_EVENT_QUEUE_CAPACITY 1024
 
-typedef enum FudeEventType {
+typedef enum {
     FUDE_EVENT_NONE,
     FUDE_EVENT_WINDOW_MOVED,
     FUDE_EVENT_WINDOW_RESIZED,
@@ -38,10 +38,10 @@ typedef enum FudeEventType {
     FUDE_EVENT_WINDOW_MAXIMIZED,
     FUDE_EVENT_WINDOW_UNMAXIMIZED,
     FUDE_EVENT_SCALE_CHANGED,
-} FudeEventType;
+} Fude_Event_Code;
 
-typedef struct FudeEvent {
-    FudeEventType type;
+typedef struct Fude_Event {
+    Fude_Event_Code code;
     union {
         struct { int x, y;  } pos;
         struct { int width, height; } size;
@@ -52,38 +52,39 @@ typedef struct FudeEvent {
         struct { char** paths; int count; } file;
         struct { float x, y; } scale;
     };
-} FudeEvent;
+} Fude_Event;
 
 const char* fude_failure_reason(void);
 
 bool fude_init(void);
 void fude_deinit(void);
 
-typedef struct _FudeWindow FudeWindow;
+typedef struct _Fude_Window Fude_Window;
 
-FudeWindow* fude_create_window(const char* title, uint32_t width, uint32_t height, bool resizable);
-void fude_destroy_window(FudeWindow* window);
+Fude_Window* fude_create_window(const char* title, uint32_t width, uint32_t height, bool resizable);
+void fude_destroy_window(Fude_Window* window);
 void fude_poll_input_events(void);
-bool fude_window_should_close(FudeWindow* window);
+bool fude_get_next_input_event(Fude_Event* event);
+bool fude_window_should_close(Fude_Window* window);
 
-typedef struct _FudeRenderer FudeRenderer;
+typedef struct _Fude_Renderer Fude_Renderer;
 
-FudeRenderer* fude_create_renderer(FudeWindow* window);
-void fude_destroy_renderer(FudeRenderer* ren);
+Fude_Renderer* fude_create_renderer(Fude_Window* window);
+void fude_destroy_renderer(Fude_Renderer* ren);
 
-void fude_present_renderer(FudeRenderer* ren);
-void fude_clear_renderer(FudeRenderer* ren);
-void fude_set_draw_color(FudeRenderer* ren, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-void fude_draw_rectangle(FudeRenderer* ren, int32_t x, int32_t y, int32_t w, int32_t h);
-void fude_draw_triangle(FudeRenderer* ren, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3);
+void fude_present_renderer(Fude_Renderer* ren);
+void fude_clear_renderer(Fude_Renderer* ren);
+void fude_set_draw_color(Fude_Renderer* ren, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+void fude_draw_rectangle(Fude_Renderer* ren, int32_t x, int32_t y, int32_t w, int32_t h);
+void fude_draw_triangle(Fude_Renderer* ren, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3);
 
-typedef struct _FudeTexture FudeTexture;
+typedef struct _Fude_Texture Fude_Texture;
 
-FudeTexture* fude_create_texture(FudeRenderer* ren, uint32_t w, uint32_t h, const uint8_t* data, int comp);
-void fude_destroy_texture(FudeTexture* tex);
+Fude_Texture* fude_create_texture(Fude_Renderer* ren, uint32_t w, uint32_t h, const uint8_t* data, int comp);
+void fude_destroy_texture(Fude_Texture* tex);
 
-void fude_update_texture(FudeTexture* tex, uint32_t w, uint32_t h, const uint8_t* data, int comp);
-void fude_draw_texture(FudeRenderer* ren, FudeTexture* tex, 
+void fude_update_texture(Fude_Texture* tex, uint32_t w, uint32_t h, const uint8_t* data, int comp);
+void fude_draw_texture(Fude_Renderer* ren, Fude_Texture* tex, 
 int sx, int sy, uint32_t sw, uint32_t sh, 
 int dx, int dy, uint32_t dw, uint32_t dh);
 
