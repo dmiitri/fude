@@ -15,8 +15,8 @@ typedef enum {
     FUDE_EVENT_WINDOW_RESIZED,
     FUDE_EVENT_WINDOW_CLOSED,
     FUDE_EVENT_WINDOW_REFRESH,
-    FUDE_EVENT_WINDOW_FOCUSED,
-    FUDE_EVENT_WINDOW_DEFOCUSED,
+    FUDE_EVENT_WINDOW_GAIN_FOCUS,
+    FUDE_EVENT_WINDOW_LOST_FOCUS,
     FUDE_EVENT_WINDOW_ICONIFIED,
     FUDE_EVENT_WINDOW_UNICONIFIED,
     FUDE_EVENT_FRAMEBUFFER_RESIZED,
@@ -43,11 +43,15 @@ typedef enum {
 typedef struct Fude_Event {
     Fude_Event_Code code;
     union {
-        struct { int x, y;  } pos;
         struct { int width, height; } size;
         struct { double x, y; } scroll;
         struct { int key, scancode, mods; } keyboard;
+        struct {
+            struct { int width, height; } size;
+            struct { int x, y; } pos;
+        } window;
         struct { int button, mods; } mouse;
+        struct { double x, y; } cursor;
         unsigned int codepoint;
         struct { char** paths; int count; } file;
         struct { float x, y; } scale;

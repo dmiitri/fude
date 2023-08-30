@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <GLFW/glfw3.h>
+#include <string.h>
 
 static struct {
     uint32_t glfw_window_count;
@@ -26,6 +27,9 @@ void fude_set_failure_code(int code)
 
 static void fude_event_window_close_callback(GLFWwindow* window);
 static void fude_event_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+static void fude_event_window_moved_callback(GLFWwindow* window, int x, int y);
+static void fude_event_window_resized_callback(GLFWwindow* window, int width, int height);
+static void fude_event_window_focused_callback(GLFWwindow* window, int focused);
 
 Fude_Window* fude_create_window(const char* title, uint32_t width, uint32_t height, bool resizable)
 {
@@ -52,6 +56,9 @@ Fude_Window* fude_create_window(const char* title, uint32_t width, uint32_t heig
 
     glfwSetWindowCloseCallback(window->glfw_window, fude_event_window_close_callback);
     glfwSetKeyCallback(window->glfw_window, fude_event_key_callback);
+    glfwSetWindowPosCallback(window->glfw_window, fude_event_window_moved_callback);
+    glfwSetWindowSizeCallback(window->glfw_window, fude_event_window_resized_callback);
+    glfwSetWindowFocusCallback(window->glfw_window, fude_event_window_focused_callback);
 
     FUDE.glfw_window_count += 1;
     return window;
@@ -66,6 +73,7 @@ void fude_destroy_window(Fude_Window* window)
 
 void fude_poll_input_events()
 {
+    memset(FUDE.event_queue.events, 0, sizeof(FUDE.event_queue.events));
     glfwPollEvents();
 }
 
@@ -77,7 +85,6 @@ bool fude_get_next_input_event(Fude_Event* event)
     }
     return event->code != FUDE_EVENT_NONE;
 }
-
 
 Fude_Event* fude_new_event(void)
 {
@@ -107,6 +114,40 @@ void fude_event_key_callback(GLFWwindow* window, int key, int scancode, int acti
         event->code = FUDE_EVENT_KEY_RELEASED;
     else if(action == GLFW_REPEAT)
         event->code = FUDE_EVENT_KEY_REPEATED;
+}
+
+void fude_event_window_moved_callback(GLFWwindow* window, int x, int y)
+{
+    Fude_Event* event = fude_new_event();
+    event->code = FUDE_EVENT_WINDOW_MOVED;
+    event->window.pos.x = x;
+    event->window.pos.y = y;
+}
+
+void fude_event_window_resized_callback(GLFWwindow* window, int width, int height)
+{
+    Fude_Event* event = fude_new_event();
+    event->code = FUDE_EVENT_WINDOW_RESIZED;
+    event->window.size.width = width;
+    event->window.size.height = height;
+}
+
+void fude_event_window_focused_callback(GLFWwindow* window, int focused)
+{
+    Fude_Event* event = fude_new_event();
+    if(focused) {
+        event->code = FUDE_EVENT_WINDOW_GAIN_FOCUS;
+    } else {
+        event->code = FUDE_EVENT_WINDOW_LOST_FOCUS;
+    }
+}
+
+static void fude_event_cursor_moved_callback(GLFWwindow* window, double x, double y)
+{
+    Fude_Event* event = fude_new_event();
+    event->code = FUDE_EVENT_CURSOR_MOVED;
+    event->cursor.x = x;
+    event->cursor.y = y;
 }
 
 const char* fude_failure_reason(void)
