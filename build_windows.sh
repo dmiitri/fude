@@ -16,13 +16,13 @@ fi
 
 $cc $cflags -DFUDE_EXPORT -c -o "./build/bin-int/fude_core.c.o"           "./src/fude_core.c"
 $cc $cflags -DFUDE_EXPORT -c -o "./build/bin-int/fude_utils.c.o"          "./src/fude_utils.c"
-$cc $cflags -DFUDE_EXPORT -c -o "./build/bin-int/fude_shader.c.o"         "./src/fude_shader.c"
-$cc $cflags -DFUDE_EXPORT -c -o "./build/bin-int/fude_texture.c.o"        "./src/fude_texture.c"
+$cc $cflags -DFUDE_EXPORT -c -o "./build/bin-int/fude_graphics.c.o"       "./src/fude_graphics.c"
+$cc $cflags -DFUDE_EXPORT -c -o "./build/bin-int/fude_glfw.c.o"           "./src/fude_glfw.c"
 $cc $cflags -DFUDE_EXPORT -c -o "./build/bin-int/glad.c.o"                "./src/glad/glad.c"
 
 $cc $ldflags -shared -o "./build/bin/fude.dll" \
     ./build/bin-int/fude_core.c.o ./build/bin-int/fude_utils.c.o \
-    ./build/bin-int/fude_shader.c.o ./build/bin-int/fude_texture.c.o \
+    ./build/bin-int/fude_glfw.c.o ./build/bin-int/fude_graphics.c.o \
     ./build/bin-int/glad.c.o
 
 $cc $cflags -o ./build/bin/example.exe ./example/main.c $ldflags -Lbuild/bin -lfude
