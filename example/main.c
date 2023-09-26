@@ -1,52 +1,31 @@
 #include "fude.h"
-#include <stdio.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
 
 int main(void) 
 {
-    if(!fude_init())
-        return -1;
-    Fude_Window* window = fude_create_window("The Thousands time I create Pong", WINDOW_WIDTH, WINDOW_HEIGHT, false);
+    fude* f = f_malloc(sizeof(fude));
+    fude_config config;
+    config.name = "My Game";
+    config.width = 800;
+    config.height = 600;
 
+    f_expect(f_init(f, &config) == FUDE_OK, "Failed to initialize %s\n", config.name);
 
-    Fude_Renderer* ren = fude_create_renderer(window);
-
-    bool quit = false;
-    int entt_size_w = 30;
-    int entt_size_h = 100;
-    int entt_x_offset = 30;
-
-    int player_pos_y = (WINDOW_HEIGHT - entt_size_h)/2;
-    int player_pos_x = entt_x_offset;
-    int enemy_pos_y = player_pos_y;
-    int enemy_pos_x = WINDOW_WIDTH - entt_x_offset;
-
-    while(!quit) {
-        fude_poll_input_events();
-        Fude_Event event = {0};
-        while(fude_get_next_input_event(&event)) {
-            if(event.code == FUDE_EVENT_WINDOW_CLOSED) {
-                quit = true;
-                break;
+    bool should_quit = false;
+    fude_event event;
+    while(!should_quit) {
+        f_poll_events(f);
+        while(f_next_event(f, &event)) {
+            if(event.type == FUDE_EVENT_QUIT) {
+                should_quit = true;
+            }
+            if(event.type == FUDE_EVENT_NONE) {
+                f_trace_log(FUDE_LOG_INFO, "Event NONE");
             }
         }
+        f_clear(f);
 
-        fude_set_draw_color(ren, 0, 0, 255, 255);
-        fude_draw_rectangle(ren, player_pos_x, player_pos_y, entt_size_w, entt_size_h);
-        fude_set_draw_color(ren, 255, 0, 0, 255);
-        fude_draw_rectangle(ren, enemy_pos_x, enemy_pos_y, entt_size_w, entt_size_h);
-
-        fude_set_draw_color(ren, 255, 255, 255, 255);
-        fude_clear_renderer(ren);
-        fude_present_renderer(ren);
+        f_present(f);
     }
 
-    fude_destroy_renderer(ren);
-    fude_destroy_window(window);
-    fude_deinit();
+    f_free(f);
 }
