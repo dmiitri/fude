@@ -94,7 +94,7 @@
 #define FUDE_TEX_INDEX_VERTEX_ATRIBUTE_NAME "a_color"
 #define FUDE_OBJECT_ID_VERTEX_ATRIBUTE_NAME "a_object_id"
 
-#define FUDE_TEXTURE_SAMPLER_UNIFORM_NAME "u_textures_samplers"
+#define FUDE_TEXTURE_SAMPLER_UNIFORM_NAME "u_texture_samplers"
 #define FUDE_MATRIX_MVP_UNIFORM_NAME "u_mvp"
 #define FUDE_MATRIX_PROJECTION_UNIFORM_NAME "u_projection"
 #define FUDE_MATRIX_VIEW_UNIFORM_NAME "u_view"

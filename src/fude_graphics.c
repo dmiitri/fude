@@ -32,9 +32,10 @@ fude_result _fude_init_renderer(fude* app, const fude_config* config)
 
     glGenBuffers(1, &app->renderer.ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->renderer.ibo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(uint32_t)*FUDE_RENDERER_MAXIMUM_INDICIES, 
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t)*FUDE_RENDERER_MAXIMUM_INDICIES, 
             app->renderer.indices.data, GL_DYNAMIC_DRAW);
 
+    // TODO: Setup the default shader and the default texture
     return FUDE_OK;
 }
 
@@ -42,6 +43,14 @@ void f_begin(fude* f, fude_draw_mode mode)
 {
     f->renderer.working.count = 0;
     f->renderer.working.mode = mode;
+}
+
+void f_dump_vertex(const fude_vertex* vertex)
+{
+    f_trace_log(FUDE_LOG_INFO, "x=%f, y=%f, z=%f", vertex->position.x, vertex->position.y, vertex->position.z);
+    f_trace_log(FUDE_LOG_INFO, "r=%f, g=%f, b=%f a=%f", vertex->color.r, vertex->color.g, vertex->color.b, vertex->color.a);
+    f_trace_log(FUDE_LOG_INFO, "u=%f, v=%f, tex_index=%f", vertex->tex_coords.u, vertex->tex_coords.v, vertex->tex_index);
+    f_trace_log(FUDE_LOG_INFO, "object_id=%f", vertex->object_id);
 }
 
 void f_end(fude* app)
@@ -55,17 +64,20 @@ void f_end(fude* app)
             app->renderer.indices.data[i + 3] = app->renderer.vertices.count + 2;
             app->renderer.indices.data[i + 4] = app->renderer.vertices.count + 3;
             app->renderer.indices.data[i + 5] = app->renderer.vertices.count + 0;
+            app->renderer.indices.count += 6;
             app->renderer.vertices.count += 4;
-            app->renderer.indices.count += 4;
+            app->renderer.working.count -= 4;
         }
     }
 
-    for(uint32_t i = 0 ; i < 3; i += 3) {
-        app->renderer.indices.data[i + 0] = app->renderer.vertices.count + 0;
-        app->renderer.indices.data[i + 1] = app->renderer.vertices.count + 1;
-        app->renderer.indices.data[i + 2] = app->renderer.vertices.count + 2;
-        app->renderer.vertices.count += 3;
-        app->renderer.indices.count += 3;
+    if(app->renderer.working.count >= 3) {
+        for(uint32_t i = 0 ; i < app->renderer.working.count; i += 3) {
+            app->renderer.indices.data[i + 0] = app->renderer.vertices.count + 0;
+            app->renderer.indices.data[i + 1] = app->renderer.vertices.count + 1;
+            app->renderer.indices.data[i + 2] = app->renderer.vertices.count + 2;
+            app->renderer.vertices.count += 3;
+            app->renderer.indices.count += 3;
+        }
     }
 }
 
@@ -88,7 +100,7 @@ void f_vertex3f(fude* app, float x, float y, float z)
     app->renderer.working.vertex.position.y = y;
     app->renderer.working.vertex.position.z = z;
 
-    app->renderer.vertices.data[app->renderer.vertices.count] = app->renderer.working.vertex;
+    app->renderer.vertices.data[app->renderer.working.count] = app->renderer.working.vertex;
     app->renderer.working.count += 1;
 }
 
@@ -109,13 +121,15 @@ void f_flush(fude* app)
 
     // make draw call
     glUseProgram(app->renderer.shader.id);
+    f_trace_log(FUDE_LOG_INFO, "Shader ID = %d", app->renderer.shader.id);
     glBindVertexArray(app->renderer.id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->renderer.ibo);
-    glDrawElements(GL_TRIANGLES, app->renderer.indices.count, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, app->renderer.indices.count, GL_UNSIGNED_INT, NULL);
 
     // clear the data
     f_memzero(app->renderer.vertices.data, sizeof(fude_vertex)*app->renderer.vertices.count);
     f_memzero(app->renderer.indices.data, sizeof(uint32_t)*app->renderer.indices.count);
+
     app->renderer.vertices.count = 0;
     app->renderer.indices.count = 0;
     app->renderer.shader = app->renderer.default_shader;
@@ -142,10 +156,9 @@ fude_result f_load_shader(fude_shader* shader, const char* vert_src, const char*
     glShaderSource(vert_module, 1, (const GLchar* const*)&vert_src, NULL);
     glCompileShader(vert_module);
     glGetShaderiv(vert_module, GL_COMPILE_STATUS, &success);
-    f_trace_log(FUDE_LOG_INFO, "success = %d", success);
     if(!success) {
         glGetShaderInfoLog(vert_module, sizeof(info_log), NULL, info_log);
-        f_trace_log(FUDE_LOG_ERROR, "VERTEX SHADER: %s\n\t", info_log); // TODO: Error
+        f_trace_log(FUDE_LOG_ERROR, "%s", info_log);
         return FUDE_SHADER_CREATION_ERROR;
     }
 
@@ -207,6 +220,7 @@ fude_result f_load_shader(fude_shader* shader, const char* vert_src, const char*
         return result;
     }
 
+    glUseProgram(0);
     return FUDE_OK;
 }
 
@@ -214,7 +228,7 @@ fude_result f_load_shader_from_file(fude_shader* shader, const char* vert_path, 
 {
     char* vert_src = f_load_file_data(vert_path, NULL);
     char* frag_src = f_load_file_data(frag_path, NULL);
-    fude_result result = f_load_shader(shader, vert_path, frag_path);
+    fude_result result = f_load_shader(shader, vert_src, frag_src);
 
     if(result != FUDE_OK) {
         return result;

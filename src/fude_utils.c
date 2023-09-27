@@ -36,13 +36,13 @@ void f_trace_log(int log_level, const char* fmt, ...)
         } break;
     case FUDE_LOG_WARNING:
         {
-            fprintf(file, "[WARNING] ");
             file = stderr;
+            fprintf(file, "[WARNING] ");
         } break;
     case FUDE_LOG_ERROR:
         {
-            fprintf(file, "[ERROR] ");
             file = stderr;
+            fprintf(file, "[ERROR] ");
         } break;
     }
 

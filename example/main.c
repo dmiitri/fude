@@ -18,8 +18,6 @@ int main(void)
     fude_shader shader;
     f_expect(f_load_shader_from_file(&shader, "./example/main.vert", "./example/main.frag") == FUDE_OK, 
             "Failed to load shader\n");
-    f_trace_log(FUDE_LOG_INFO, "TEST SHADER LOADED\n");
-
 
     while(!should_quit) {
         f_poll_events(f);
@@ -33,6 +31,7 @@ int main(void)
         }
         f_clear(f);
 
+        f_use_shader(f, shader);
         f_begin(f, FUDE_MODE_QUADS);
             f_color(f, red);
             f_vertex2f(f, -0.5f, -0.5f);
@@ -44,6 +43,7 @@ int main(void)
             f_vertex2f(f, -0.5f, +0.5f);
         f_end(f);
 
+        f_flush(f);
         f_present(f);
     }
 
