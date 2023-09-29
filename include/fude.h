@@ -1,7 +1,7 @@
 #ifndef FUDE_H
 #define FUDE_H
 
-#include <stdbool.h> // size_t, sizeof(), offsetof()
+#include <stddef.h> // size_t, sizeof(), offsetof()
 #include <stdint.h>  // uint32_t
 #include <stdbool.h> // bool, true, false
 
@@ -161,6 +161,12 @@ typedef enum {
 } fude_result;
 
 typedef struct { uint8_t r, g, b, a;  } fude_color;
+#define FUDE_RED   (fude_color){ .r=0xFF, .g=0x00, .b=0x00, .a=0xFF }
+#define FUDE_BLUE  (fude_color){ .r=0x00, .g=0x00, .b=0xFF, .a=0xFF }
+#define FUDE_GREEN (fude_color){ .r=0x00, .g=0xFF, .b=0x00, .a=0xFF }
+#define FUDE_BLACK (fude_color){ .r=0x00, .g=0x00, .b=0x00, .a=0xFF }
+#define FUDE_WHITE (fude_color){ .r=0xFF, .g=0xFF, .b=0xFF, .a=0xFF }
+
 typedef struct { int x, y, width, height; } fude_rect;
 typedef struct { int x0, y0, x1, y1, x2, y2; } fude_triangle;
 
@@ -205,6 +211,11 @@ typedef enum {
 } fude_draw_mode;
 
 typedef struct {
+    M4f projection_matrix;
+    M4f view_matrix;
+} fude_camera;
+
+typedef struct {
     uint32_t id;
     fude_shader shader;
     uint32_t vbo, ibo;
@@ -216,10 +227,14 @@ typedef struct {
         uint32_t data[FUDE_RENDERER_MAXIMUM_INDICIES];
         uint32_t count;
     } indices;
-    fude_texture textures[FUDE_RENDERER_MAXIMUM_TEXTURES];
+    struct {
+        fude_texture data[FUDE_RENDERER_MAXIMUM_TEXTURES];
+        int samplers[FUDE_RENDERER_MAXIMUM_TEXTURES];
+    } textures;
 
     fude_shader default_shader;
     fude_texture default_texture;
+
     struct {
         fude_vertex vertex;
         fude_draw_mode mode;
@@ -272,8 +287,9 @@ FAPI void f_clear(fude* f);
 // fude_graphics.c
 FAPI void f_flush(fude* f);
 
-FAPI void f_begin(fude* f, fude_draw_mode mode);
+FAPI void f_begin(fude* f, fude_draw_mode mode, fude_shader shader);
 FAPI void f_end(fude* f);
+FAPI void f_texture(fude* f, fude_texture texture, float u, float v, uint32_t index);
 FAPI void f_color4f(fude* f, float r, float g, float b, float a);
 FAPI void f_color(fude* f, fude_color color);
 FAPI void f_vertex2f(fude* app, float x, float y);
@@ -283,17 +299,18 @@ FAPI void f_triangle(fude* f, fude_triangle triangle, uint32_t color);
 FAPI void f_rectangle(fude* f, fude_rect rect, uint32_t color);
 FAPI void f_rectangle_tex(fude* f, fude_rect rect, fude_texture texture);
 
-FAPI void f_use_shader(fude* f, fude_shader shader);
-FAPI void f_use_texture(fude* f, uint32_t index, fude_shader shader);
-
-FAPI fude_result f_load_shader(fude_shader* shader, const char* vert_src, const char* frag_src);
-FAPI fude_result f_load_shader_from_file(fude_shader* shader, const char* vert_path, const char* frag_path);
-FAPI void f_unload_shader(fude_shader shader);
+FAPI fude_result f_create_shader(fude_shader* shader, const char* vert_src, const char* frag_src);
+FAPI fude_result f_create_shader_from_file(fude_shader* shader, const char* vert_path, const char* frag_path);
+FAPI void f_destroy_shader(fude_shader shader);
 FAPI fude_result f_get_shader_uniform_location(fude_shader shader, int* location, const char* name);
+FAPI fude_result f_set_shader_uniform(fude_shader shader, int location, int data_type, int count, const void* data, bool transpose);
 
+FAPI fude_result f_create_texture(fude_texture* texture, const void* data, int width, int height, int channels);
+FAPI void f_destroy_texture(fude_texture texture);
+FAPI void f_update_texture(fude_texture texture, const void* data, int width, int height, int channels);
 
-FAPI fude_result f_load_texture(fude_texture* texture, const void* data, int width, int height, int format);
-FAPI void f_unload_texture_(fude_texture texture);
+FAPI fude_result f_create_camera2d(fude_camera* camera, uint32_t width, uint32_t height);
+FAPI fude_result f_create_camera3d(fude_camera* camera);
 
 // fude_utils.c
 FAPI void* f_malloc(uint64_t nbytes);
@@ -333,6 +350,18 @@ enum fude_log_level {
     FUDE_LOG_INFO,
     FUDE_LOG_WARNING,
     FUDE_LOG_ERROR,
+};
+
+enum fude_shader_data_type {
+    FUDE_SHADERDT_FLOAT = 0,
+    FUDE_SHADERDT_VEC2,
+    FUDE_SHADERDT_VEC3,
+    FUDE_SHADERDT_VEC4,
+    FUDE_SHADERDT_INT,
+    FUDE_SHADERDT_IVEC2,
+    FUDE_SHADERDT_IVEC3,
+    FUDE_SHADERDT_IVEC4,
+    FUDE_SHADERDT_MAT4,
 };
 
 #endif // FUDE_H

@@ -39,10 +39,11 @@ fude_result _fude_init_renderer(fude* app, const fude_config* config)
     return FUDE_OK;
 }
 
-void f_begin(fude* f, fude_draw_mode mode)
+void f_begin(fude* f, fude_draw_mode mode, fude_shader shader)
 {
     f->renderer.working.count = 0;
     f->renderer.working.mode = mode;
+    f->renderer.shader = shader;
 }
 
 void f_dump_vertex(const fude_vertex* vertex)
@@ -77,6 +78,7 @@ void f_end(fude* app)
             app->renderer.indices.data[i + 2] = app->renderer.vertices.count + 2;
             app->renderer.vertices.count += 3;
             app->renderer.indices.count += 3;
+            app->renderer.working.count -= 3;
         }
     }
 }
@@ -102,11 +104,22 @@ void f_vertex3f(fude* app, float x, float y, float z)
 
     app->renderer.vertices.data[app->renderer.working.count] = app->renderer.working.vertex;
     app->renderer.working.count += 1;
+    app->renderer.working.vertex.tex_index = 0;
 }
 
 void f_vertex2f(fude* app, float x, float y)
 {
     f_vertex3f(app, x, y, 0.0f); // TODO: Make the Z coordinate dynamic
+}
+
+void f_texture(fude* app, fude_texture texture, float u, float v, uint32_t index)
+{
+    if(index > FUDE_RENDERER_MAXIMUM_TEXTURES) return;
+    app->renderer.working.vertex.tex_coords.u = u;
+    app->renderer.working.vertex.tex_coords.v = v;
+    app->renderer.working.vertex.tex_index = index;
+    app->renderer.textures.data[index] = texture;
+    app->renderer.textures.samplers[index] = index;
 }
 
 void f_flush(fude* app)
@@ -119,9 +132,20 @@ void f_flush(fude* app)
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, app->renderer.indices.count*sizeof(uint32_t), 
             app->renderer.indices.data);
 
+    for(size_t i = 0; i < FUDE_RENDERER_MAXIMUM_TEXTURES; ++i) {
+        if(app->renderer.textures.data[i].id != 0) {
+            glActiveTexture(GL_TEXTURE0 + app->renderer.textures.samplers[i]);
+            glBindTexture(GL_TEXTURE_2D, app->renderer.textures.data[i].id);
+        }
+    }
+
+    f_set_shader_uniform(app->renderer.shader, 
+            app->renderer.shader.uniform_loc[FUDE_UNIFORM_TEXTURE_SAMPLERS_LOC],
+            FUDE_SHADERDT_INT, FUDE_RENDERER_MAXIMUM_TEXTURES, 
+            app->renderer.textures.samplers, false);
+
     // make draw call
     glUseProgram(app->renderer.shader.id);
-    f_trace_log(FUDE_LOG_INFO, "Shader ID = %d", app->renderer.shader.id);
     glBindVertexArray(app->renderer.id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->renderer.ibo);
     glDrawElements(GL_TRIANGLES, app->renderer.indices.count, GL_UNSIGNED_INT, NULL);
@@ -135,15 +159,10 @@ void f_flush(fude* app)
     app->renderer.shader = app->renderer.default_shader;
 
     for(uint32_t i = 0; i < FUDE_RENDERER_MAXIMUM_TEXTURES; ++i)
-        app->renderer.textures[i] = app->renderer.default_texture;
+        app->renderer.textures.data[i] = app->renderer.default_texture;
 }
 
-void f_use_shader(fude* f, fude_shader shader)
-{
-    f->renderer.shader = shader;
-}
-
-fude_result f_load_shader(fude_shader* shader, const char* vert_src, const char* frag_src)
+fude_result f_create_shader(fude_shader* shader, const char* vert_src, const char* frag_src)
 {
     if(!shader) return FUDE_INVALID_ARGUMENTS_ERROR;
     if(!vert_src) return FUDE_INVALID_ARGUMENTS_ERROR;
@@ -224,11 +243,40 @@ fude_result f_load_shader(fude_shader* shader, const char* vert_src, const char*
     return FUDE_OK;
 }
 
-fude_result f_load_shader_from_file(fude_shader* shader, const char* vert_path, const char* frag_path)
+fude_result f_create_texture(fude_texture* texture, const void* data, int width, int height, int channels)
+{
+    if(!texture) return FUDE_INVALID_ARGUMENTS_ERROR;
+    glGenTextures(1, &texture->id);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    GLenum internal_format = GL_RGBA8;
+    GLenum data_format = channels == 4 ? GL_RGBA : GL_RGB;
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, 
+            height, 0, data_format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    return FUDE_OK;
+}
+
+void f_destroy_texture_(fude_texture texture)
+{
+    glDeleteTextures(1, &texture.id);
+}
+
+void f_update_texture(fude_texture texture, const void* data, int width, int height, int channels)
+{
+    GLenum data_format = channels == 4 ? GL_RGBA : GL_RGB;
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, (GLsizei)width, (GLsizei)height, data_format, GL_UNSIGNED_BYTE, data);
+}
+
+fude_result f_create_shader_from_file(fude_shader* shader, const char* vert_path, const char* frag_path)
 {
     char* vert_src = f_load_file_data(vert_path, NULL);
     char* frag_src = f_load_file_data(frag_path, NULL);
-    fude_result result = f_load_shader(shader, vert_src, frag_src);
+    fude_result result = f_create_shader(shader, vert_src, frag_src);
 
     if(result != FUDE_OK) {
         return result;
@@ -239,19 +287,40 @@ fude_result f_load_shader_from_file(fude_shader* shader, const char* vert_path, 
     return FUDE_OK;
 }
 
-void f_unload_shader(fude_shader shader)
+void f_destroy_shader(fude_shader shader)
 {
     glDeleteProgram(shader.id);
 }
 
 fude_result f_get_shader_uniform_location(fude_shader shader, int* location, const char* name)
 {
-    if(!location) return FUDE_INVALID_ARGUMENTS_ERROR;
+    if(!location || !name) return FUDE_INVALID_ARGUMENTS_ERROR;
+
     glUseProgram(shader.id);
     int _location = glGetUniformLocation(shader.id, name);
     if(_location < 0) {
         f_trace_log(FUDE_LOG_ERROR, "Uniform %s not found in shader program", name);
         return FUDE_UNIFORM_LOCATION_NOT_FOUND_ERROR;
     }
+    return FUDE_OK;
+}
+
+fude_result f_set_shader_uniform(fude_shader shader, int location, int type, int count, const void* data, bool transponse)
+{
+    if(!data) return FUDE_INVALID_ARGUMENTS_ERROR;
+
+    glUseProgram(shader.id);
+    switch(type) {
+        case FUDE_SHADERDT_FLOAT: glUniform1fv(location, count, (float*)data); break;
+        case FUDE_SHADERDT_VEC2: glUniform2fv(location, count, (float*)data); break;
+        case FUDE_SHADERDT_VEC3: glUniform3fv(location, count, (float*)data); break;
+        case FUDE_SHADERDT_VEC4: glUniform4fv(location, count, (float*)data); break;
+        case FUDE_SHADERDT_INT: glUniform1iv(location, count, (int*)data); break;
+        case FUDE_SHADERDT_IVEC2: glUniform2iv(location, count, (int*)data); break;
+        case FUDE_SHADERDT_IVEC3: glUniform3iv(location, count, (int*)data); break;
+        case FUDE_SHADERDT_IVEC4: glUniform4iv(location, count, (int*)data); break;
+        case FUDE_SHADERDT_MAT4: glUniformMatrix4fv(location, count, transponse, (float*)data); break;
+    }
+
     return FUDE_OK;
 }
