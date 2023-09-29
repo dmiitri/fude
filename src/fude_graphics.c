@@ -6,26 +6,26 @@
 void CheckOpenGLError(void)
 {
     GLenum err = GL_NO_ERROR;
-    f_trace_log(FUDE_LOG_INFO, "CHECKING OPENGL ERROR\n");
+    f_trace_log(FUDE_LOG_INFO, "CHECKING OPENGL ERROR");
     while((err = glGetError()) != GL_NO_ERROR) {
         if(err == GL_NO_ERROR) {
             break;
         } else if(err == GL_INVALID_ENUM) {
-            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_ENUM\n", err);
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_ENUM", err);
         } else if(err == GL_INVALID_VALUE) {
-            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_VALUE\n", err);
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_VALUE", err);
         } else if(err == GL_INVALID_OPERATION) {
-            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_OPERATION\n", err);
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_OPERATION", err);
         } else if(err == GL_STACK_OVERFLOW) {
-            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_STACK_OVERFLOW\n", err);
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_STACK_OVERFLOW", err);
         } else if(err == GL_STACK_UNDERFLOW) {
-            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_STACK_UNDERFLOW\n", err);
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_STACK_UNDERFLOW", err);
         } else if(err == GL_OUT_OF_MEMORY) {
-            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_OUT_OF_MEMORY\n", err);
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_OUT_OF_MEMORY", err);
         } else if(err == GL_INVALID_FRAMEBUFFER_OPERATION) {
-            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_FRAMEBUFFER_OPERATION\n", err);
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_FRAMEBUFFER_OPERATION", err);
         } else {
-            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR: %d\n", err);
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR: %d", err);
         }
     }
 }
@@ -177,7 +177,6 @@ void f_flush(fude* app)
     glBindVertexArray(app->renderer.id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->renderer.ibo);
     glDrawElements(GL_TRIANGLES, app->renderer.indices.count, GL_UNSIGNED_INT, NULL);
-    CheckOpenGLError();
 
     // clear the data
     f_memzero(app->renderer.vertices.data, sizeof(fude_vertex)*app->renderer.vertices.count);
@@ -352,6 +351,5 @@ fude_result f_set_shader_uniform(fude_shader shader, int location, int type, int
         case FUDE_SHADERDT_IVEC4: glUniform4iv(location, count, (int*)data); break;
         case FUDE_SHADERDT_MAT4: glUniformMatrix4fv(location, count, transponse, (float*)data); break;
     }
-
     return FUDE_OK;
 }
