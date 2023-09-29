@@ -104,6 +104,7 @@
 #define FUDE_RENDERER_MAXIMUM_VERTICES (32*1024)
 #define FUDE_RENDERER_MAXIMUM_INDICIES (FUDE_RENDERER_MAXIMUM_VERTICES*6/4)
 #define FUDE_RENDERER_MAXIMUM_TEXTURES 8
+#define FUDE_SHADER_RETRIEVE_ALL_LOCATIONS 0
 
 //======================================================================
 // Types

@@ -16,13 +16,10 @@ uniform mat4 u_model;
 
 void main()
 {
-    gl_Position = vec4(a_position, 1.0);
+    gl_Position = u_mvp * vec4(a_position, 1.0);
     v_color = a_color;
     v_tex_coords = a_tex_coords;
     v_tex_index = a_tex_index;
 
-    u_projection;
-    u_view;
-    u_model;
-    u_mvp;
+    u_mvp * u_model * u_view * u_projection;
 }

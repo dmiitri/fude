@@ -3,6 +3,34 @@
 #include "glad/glad.h"
 #include <stddef.h>
 
+void CheckOpenGLError(void)
+{
+    GLenum err = GL_NO_ERROR;
+    f_trace_log(FUDE_LOG_INFO, "CHECKING OPENGL ERROR\n");
+    while((err = glGetError()) != GL_NO_ERROR) {
+        if(err == GL_NO_ERROR) {
+            break;
+        } else if(err == GL_INVALID_ENUM) {
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_ENUM\n", err);
+        } else if(err == GL_INVALID_VALUE) {
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_VALUE\n", err);
+        } else if(err == GL_INVALID_OPERATION) {
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_OPERATION\n", err);
+        } else if(err == GL_STACK_OVERFLOW) {
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_STACK_OVERFLOW\n", err);
+        } else if(err == GL_STACK_UNDERFLOW) {
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_STACK_UNDERFLOW\n", err);
+        } else if(err == GL_OUT_OF_MEMORY) {
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_OUT_OF_MEMORY\n", err);
+        } else if(err == GL_INVALID_FRAMEBUFFER_OPERATION) {
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR %d: GL_INVALID_FRAMEBUFFER_OPERATION\n", err);
+        } else {
+            f_trace_log(FUDE_LOG_ERROR, "OPENGL ERROR: %d\n", err);
+        }
+    }
+}
+
+
 fude_result _fude_init_renderer(fude* app, const fude_config* config)
 {
     (void)config;
@@ -149,6 +177,7 @@ void f_flush(fude* app)
     glBindVertexArray(app->renderer.id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->renderer.ibo);
     glDrawElements(GL_TRIANGLES, app->renderer.indices.count, GL_UNSIGNED_INT, NULL);
+    CheckOpenGLError();
 
     // clear the data
     f_memzero(app->renderer.vertices.data, sizeof(fude_vertex)*app->renderer.vertices.count);
@@ -221,6 +250,7 @@ fude_result f_create_shader(fude_shader* shader, const char* vert_src, const cha
         return result;
     }
 
+#if FUDE_SHADER_RETRIEVE_ALL_LOCATIONS
     result = f_get_shader_uniform_location(*shader, &shader->uniform_loc[FUDE_UNIFORM_MATRIX_PROJECTION_LOC],
                 FUDE_MATRIX_PROJECTION_UNIFORM_NAME);
     if(result != FUDE_OK) {
@@ -238,6 +268,7 @@ fude_result f_create_shader(fude_shader* shader, const char* vert_src, const cha
     if(result != FUDE_OK) {
         return result;
     }
+#endif
 
     glUseProgram(0);
     return FUDE_OK;
@@ -250,7 +281,7 @@ fude_result f_create_texture(fude_texture* texture, const void* data, int width,
     glBindTexture(GL_TEXTURE_2D, texture->id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     GLenum internal_format = GL_RGBA8;
     GLenum data_format = channels == 4 ? GL_RGBA : GL_RGB;
@@ -299,7 +330,7 @@ fude_result f_get_shader_uniform_location(fude_shader shader, int* location, con
     glUseProgram(shader.id);
     int _location = glGetUniformLocation(shader.id, name);
     if(_location < 0) {
-        f_trace_log(FUDE_LOG_ERROR, "Uniform %s not found in shader program", name);
+        f_trace_log(FUDE_LOG_ERROR, "Uniform with name %s not found in shader program", name);
         return FUDE_UNIFORM_LOCATION_NOT_FOUND_ERROR;
     }
     return FUDE_OK;
